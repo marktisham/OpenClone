@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #1c1c1e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    }
+
+    .calculator {
+      width: 320px;
+      background: #1c1c1e;
+      border-radius: 48px;
+      padding: 24px 16px 20px;
+      box-shadow: 0 0 0 10px #2c2c2e, 0 30px 80px rgba(0,0,0,0.8);
+    }
+
+    .display {
+      padding: 12px 20px 16px;
+      text-align: right;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .expression {
+      color: #636366;
+      font-size: 18px;
+      min-height: 24px;
+      margin-bottom: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .result {
+      color: #ffffff;
+      font-size: 72px;
+      font-weight: 200;
+      line-height: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .result.small { font-size: 48px; }
+    .result.xsmall { font-size: 32px; }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 0 4px;
+    }
+
+    button {
+      border: none;
+      border-radius: 50%;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      font-size: 28px;
+      font-weight: 400;
+      cursor: pointer;
+      transition: opacity 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: inherit;
+    }
+
+    button:active { opacity: 0.6; }
+
+    .btn-function {
+      background: #a5a5a5;
+      color: #1c1c1e;
+      font-size: 20px;
+      font-weight: 500;
+    }
+
+    .btn-operator {
+      background: #ff9f0a;
+      color: #ffffff;
+    }
+
+    .btn-operator.active {
+      background: #ffffff;
+      color: #ff9f0a;
+    }
+
+    .btn-digit {
+      background: #333335;
+      color: #ffffff;
+    }
+
+    .btn-zero {
+      aspect-ratio: unset;
+      border-radius: 999px;
+      justify-content: flex-start;
+      padding-left: 22px;
+      grid-column: span 2;
+    }
+
+    .btn-equals {
+      background: #ff9f0a;
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator">
+    <div class="display">
+      <div class="expression" id="expression"></div>
+      <div class="result" id="result">0</div>
+    </div>
+    <div class="buttons">
+      <button class="btn-function" onclick="pressAC()">AC</button>
+      <button class="btn-function" onclick="pressSign()">+/−</button>
+      <button class="btn-function" onclick="pressPercent()">%</button>
+      <button class="btn-operator" id="op-div" onclick="pressOperator('÷')">÷</button>
+
+      <button class="btn-digit" onclick="pressDigit('7')">7</button>
+      <button class="btn-digit" onclick="pressDigit('8')">8</button>
+      <button class="btn-digit" onclick="pressDigit('9')">9</button>
+      <button class="btn-operator" id="op-mul" onclick="pressOperator('×')">×</button>
+
+      <button class="btn-digit" onclick="pressDigit('4')">4</button>
+      <button class="btn-digit" onclick="pressDigit('5')">5</button>
+      <button class="btn-digit" onclick="pressDigit('6')">6</button>
+      <button class="btn-operator" id="op-sub" onclick="pressOperator('−')">−</button>
+
+      <button class="btn-digit" onclick="pressDigit('1')">1</button>
+      <button class="btn-digit" onclick="pressDigit('2')">2</button>
+      <button class="btn-digit" onclick="pressDigit('3')">3</button>
+      <button class="btn-operator" id="op-add" onclick="pressOperator('+')">+</button>
+
+      <button class="btn-digit btn-zero" onclick="pressDigit('0')">0</button>
+      <button class="btn-digit" onclick="pressDecimal()">.</button>
+      <button class="btn-equals" onclick="pressEquals()">=</button>
+    </div>
+  </div>
+
+  <script>
+    let current = '0';
+    let previous = null;
+    let operator = null;
+    let justEvaluated = false;
+    let expressionStr = '';
+
+    const resultEl = document.getElementById('result');
+    const expressionEl = document.getElementById('expression');
+
+    function updateDisplay() {
+      resultEl.textContent = current;
+      expressionEl.textContent = expressionStr;
+      const len = current.length;
+      resultEl.className = 'result' + (len > 9 ? ' xsmall' : len > 6 ? ' small' : '');
+    }
+
+    function highlightOperator(op) {
+      ['op-add','op-sub','op-mul','op-div'].forEach(id => {
+        document.getElementById(id).classList.remove('active');
+      });
+      const map = {'+':'op-add','−':'op-sub','×':'op-mul','÷':'op-div'};
+      if (op && map[op]) document.getElementById(map[op]).classList.add('active');
+    }
+
+    function pressDigit(d) {
+      if (justEvaluated) {
+        current = d;
+        expressionStr = '';
+        justEvaluated = false;
+      } else if (current === '0') {
+        current = d;
+      } else if (current.length < 9) {
+        current += d;
+      }
+      updateDisplay();
+    }
+
+    function pressDecimal() {
+      if (justEvaluated) { current = '0.'; expressionStr = ''; justEvaluated = false; }
+      else if (!current.includes('.')) current += '.';
+      updateDisplay();
+    }
+
+    function pressOperator(op) {
+      highlightOperator(op);
+      if (operator && !justEvaluated) {
+        evaluate();
+        previous = parseFloat(current);
+      } else {
+        previous = parseFloat(current);
+      }
+      operator = op;
+      expressionStr = format(previous) + ' ' + op;
+      justEvaluated = false;
+      current = '0';
+      updateDisplay();
+    }
+
+    function evaluate() {
+      if (operator === null || previous === null) return;
+      const a = previous;
+      const b = parseFloat(current);
+      expressionStr = format(a) + ' ' + operator + ' ' + format(b) + ' =';
+      let res;
+      if (operator === '+') res = a + b;
+      else if (operator === '−') res = a - b;
+      else if (operator === '×') res = a * b;
+      else if (operator === '÷') res = b === 0 ? 'Error' : a / b;
+      current = res === 'Error' ? 'Error' : format(res);
+      operator = null;
+      previous = null;
+      justEvaluated = true;
+      highlightOperator(null);
+      updateDisplay();
+    }
+
+    function format(n) {
+      if (typeof n !== 'number') return n;
+      const s = parseFloat(n.toPrecision(9)).toString();
+      return s.length > 9 ? parseFloat(n.toPrecision(6)).toString() : s;
+    }
+
+    function pressEquals() { evaluate(); }
+
+    function pressAC() {
+      current = '0'; previous = null; operator = null;
+      justEvaluated = false; expressionStr = '';
+      highlightOperator(null);
+      updateDisplay();
+    }
+
+    function pressSign() {
+      if (current !== '0' && current !== 'Error') {
+        current = current.startsWith('-') ? current.slice(1) : '-' + current;
+        updateDisplay();
+      }
+    }
+
+    function pressPercent() {
+      if (current !== 'Error') {
+        current = format(parseFloat(current) / 100);
+        updateDisplay();
+      }
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key >= '0' && e.key <= '9') pressDigit(e.key);
+      else if (e.key === '.') pressDecimal();
+      else if (e.key === '+') pressOperator('+');
+      else if (e.key === '-') pressOperator('−');
+      else if (e.key === '*') pressOperator('×');
+      else if (e.key === '/') { e.preventDefault(); pressOperator('÷'); }
+      else if (e.key === 'Enter' || e.key === '=') pressEquals();
+      else if (e.key === 'Escape') pressAC();
+      else if (e.key === 'Backspace') {
+        if (!justEvaluated && current.length > 1) current = current.slice(0, -1);
+        else current = '0';
+        updateDisplay();
+      }
+    });
+  </script>
+</body>
+</html>

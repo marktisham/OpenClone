@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Reasoning Tester (Flask)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/reasoning-tester/app.py",
+      "cwd": "${workspaceFolder}/reasoning-tester",
+      "console": "integratedTerminal",
+      "python": "${workspaceFolder}/reasoning-tester/.venv/bin/python",
+      "justMyCode": true,
+      "env": {
+        "FLASK_ENV": "development"
+      },
+      "serverReadyAction": {
+        "pattern": "Running on https?://127\\.0\\.0\\.1:([0-9]+)",
+        "uriFormat": "http://127.0.0.1:%s",
+        "action": "openExternally"
+      }
+    }
+  ]
+}

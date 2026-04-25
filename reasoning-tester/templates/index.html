@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>OpenCode Reasoning Tester</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+  label { display: block; margin-top: 1rem; font-weight: 600; }
+  input, textarea { width: 100%; font-family: inherit; font-size: 1rem; padding: 0.5rem; box-sizing: border-box; }
+  textarea { min-height: 100px; }
+  button { margin-top: 1rem; padding: 0.6rem 1.2rem; font-size: 1rem; cursor: pointer; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  #status { margin-top: 1rem; color: #666; font-size: 0.9rem; }
+  #output { margin-top: 1rem; border: 1px solid #ddd; padding: 1rem; border-radius: 4px; background: #fafafa; white-space: pre-wrap; font-family: ui-monospace, Menlo, monospace; font-size: 0.9rem; min-height: 200px; }
+  .reasoning { color: #888; font-style: italic; }
+  .text { color: #111; }
+  .err { color: #c00; }
+  #curl { margin-top: 1rem; padding: 0.75rem; background: #1e1e1e; color: #d4d4d4; border-radius: 4px; font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; display: none; }
+  #session { margin-top: 0.5rem; color: #888; font-size: 0.8rem; font-family: ui-monospace, Menlo, monospace; }
+</style>
+</head>
+<body>
+  <h1>OpenCode Reasoning Tester</h1>
+  <p>Creates a session and streams reasoning/text events while posting your prompt.</p>
+
+  <label>External IP</label>
+  <input id="ip" placeholder="e.g. 34.123.45.67" />
+
+  <label>Prompt</label>
+  <textarea id="prompt" placeholder="What should OpenCode do?"></textarea>
+
+  <button id="go">Send</button>
+
+  <div id="status"></div>
+  <div id="curl"></div>
+  <div id="session"></div>
+  <div id="output"></div>
+
+<script>
+const btn = document.getElementById("go");
+const statusEl = document.getElementById("status");
+const curlEl = document.getElementById("curl");
+const sessionEl = document.getElementById("session");
+let currentSessionId = null;
+const outEl = document.getElementById("output");
+
+btn.addEventListener("click", async () => {
+  const ip = document.getElementById("ip").value.trim();
+  const prompt = document.getElementById("prompt").value;
+  if (!ip || !prompt) { alert("IP and prompt are required"); return; }
+
+  btn.disabled = true;
+  statusEl.textContent = "Connecting...";
+  outEl.textContent = "";
+  curlEl.style.display = "none";
+  curlEl.textContent = "";
+
+  const resp = await fetch("/run", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ip, prompt, session_id: currentSessionId}),
+  });
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+
+  function handleEvent(evType, data) {
+    let obj = {};
+    try { obj = JSON.parse(data); } catch {}
+    if (evType === "session") {
+      currentSessionId = obj.id;
+      sessionEl.textContent = "session: " + obj.id;
+      statusEl.textContent = "Streaming...";
+      const body = JSON.stringify({parts: [{type: "text", text: prompt}]});
+      const cmd = "curl -X POST http://" + ip + ":4096/session/" + obj.id + "/message \\\n"
+        + "  -H \"Content-Type: application/json\" \\\n"
+        + "  -d " + JSON.stringify(body);
+      curlEl.textContent = cmd;
+      curlEl.style.display = "block";
+    } else if (evType === "part") {
+      const span = document.createElement("span");
+      span.className = obj.type === "reasoning" ? "reasoning" : "text";
+      span.textContent = obj.text + (obj.type === "text" ? "" : "\n");
+      outEl.appendChild(span);
+      outEl.scrollTop = outEl.scrollHeight;
+    } else if (evType === "error") {
+      const span = document.createElement("div");
+      span.className = "err";
+      span.textContent = "ERROR: " + obj.message;
+      outEl.appendChild(span);
+    } else if (evType === "done") {
+      statusEl.textContent = "Done.";
+    }
+  }
+
+  while (true) {
+    const {value, done} = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, {stream: true});
+    let idx;
+    while ((idx = buf.indexOf("\n\n")) !== -1) {
+      const chunk = buf.slice(0, idx);
+      buf = buf.slice(idx + 2);
+      let ev = "message", data = "";
+      for (const line of chunk.split("\n")) {
+        if (line.startsWith("event:")) ev = line.slice(6).trim();
+        else if (line.startsWith("data:")) data += line.slice(5).trim();
+      }
+      handleEvent(ev, data);
+    }
+  }
+  btn.disabled = false;
+});
+</script>
+</body>
+</html>
