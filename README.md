@@ -1,14 +1,8 @@
-# OpenClone
 
-> Clone your developers for one-off tasks.
-
-<!-- HERO IMAGE PLACEHOLDER -->
-<!-- ![OpenClone Hero](docs/hero.png) -->
+![OpenClone Hero](OpenClone.png)
 
 <!-- VIDEO OVERVIEW PLACEHOLDER -->
 <!-- [▶ Watch the YouTube overview](https://youtube.com/TODO) -->
-
----
 
 ## What Is This?
 
@@ -17,6 +11,8 @@ OpenClone is a prototype demonstrating **headless, server-based AI coding agents
 The concept is inspired by [Ramp's blog post on automating work processes with background agents](https://builders.ramp.com/post/why-we-built-our-background-agent). The idea: instead of having a developer context-switch to handle a one-off task (a bug fix, a small feature, a refactor), you spin up an agent, hand it the task, and let it work — just like cloning the developer for that task.
 
 This prototype runs on **GCP (Google Cloud Platform)**, but the architecture is cloud-agnostic and could be adapted to AWS, Azure, or any VM-based environment.
+
+> **Disclaimer:** This is a demonstration tutorial, not a production-hardened implementation. It is intended to illustrate the concept and get something working end-to-end. Security, scalability, and operational concerns are out of scope.
 
 ## Built On OpenCode
 
