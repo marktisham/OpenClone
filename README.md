@@ -1,8 +1,9 @@
 
 ![OpenClone Hero](OpenClone.png)
 
-<!-- VIDEO OVERVIEW PLACEHOLDER -->
-<!-- [▶ Watch the YouTube overview](https://youtube.com/TODO) -->
+Watch the full overview to see OpenClone in action:
+
+[![YouTube](https://img.shields.io/badge/Watch-YouTube-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=SIuIzFvFnuY)
 
 ## What Is This?
 
